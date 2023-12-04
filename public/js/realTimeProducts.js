@@ -3,6 +3,18 @@ const socket = io();
 const productForm = document.getElementById("product-form");
 
 productForm.addEventListener("submit", async (event) => {
+    const Toast = Swal.mixin({
+        toast: true,
+        position: 'top-end',
+        color: '#11191f',
+        background: 'white',
+        customClass: {
+            popup: 'colored-toast',
+        },
+        showConfirmButton: false,
+        timer: 1000,
+        timerProgressBar: false,
+    });
     event.preventDefault();
     const title = document.getElementById("titleId");
     const description = document.getElementById("descriptionId");
@@ -16,39 +28,34 @@ productForm.addEventListener("submit", async (event) => {
         "code": code.value,
         "stock": stock.value
     };
-    const url = `http://localhost:8080/api/productByCode/${prod.code}`;
-    const response = await fetch(url);
-    const Toast = Swal.mixin({
-        toast: true,
-        position: 'top-end',
-        color: '#11191f',
-        background: 'white',
-        customClass: {
-            popup: 'colored-toast',
-        },
-        showConfirmButton: false,
-        timer: 1000,
-        timerProgressBar: false,
-    });
-    console.log ("status",response)
-    if (response.status === 500) {
-        socket.emit("product", prod);
-        title.value = "";
-        description.value = "";
-        price.value = "";
-        code.value = "";
-        stock.value = "";
-        Toast.fire({
-            icon: 'success',
-            iconColor: '#1cc738',
-            title: `Producto "${prod.title}" agregado exitosamente en la DB✅`,
-        })
-    } else {
+    if (isNaN(parseInt(price.value)) || isNaN(parseInt(stock.value))) {
         Toast.fire({
             icon: 'error',
             iconColor: '#af0707',
-            title: `Producto "${prod.title}" ya existente en la DB⛔`,
-        })
+            title: `Datos ingresados no válidos (Precio o Stock)⛔`,
+        });
+    } else {
+        const url = `http://localhost:8080/api/productByCode/${prod.code}`;
+        const response = await fetch(url);
+        if (response.status === 500) {
+            socket.emit("product", prod);
+            title.value = "";
+            description.value = "";
+            price.value = "";
+            code.value = "";
+            stock.value = "";
+            Toast.fire({
+                icon: 'success',
+                iconColor: '#1cc738',
+                title: `Producto "${prod.title}" agregado exitosamente en la DB✅`,
+            });
+        } else {
+            Toast.fire({
+                icon: 'error',
+                iconColor: '#af0707',
+                title: `Producto "${prod.title}" ya existente en la DB⛔`,
+            });
+        }
     }
 });
 
