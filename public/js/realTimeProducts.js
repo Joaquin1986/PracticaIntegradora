@@ -2,7 +2,7 @@ const socket = io();
 
 const productForm = document.getElementById("product-form");
 
-productForm.addEventListener("submit", (event) => {
+productForm.addEventListener("submit", async (event) => {
     event.preventDefault();
     const title = document.getElementById("titleId");
     const description = document.getElementById("descriptionId");
@@ -16,16 +16,43 @@ productForm.addEventListener("submit", (event) => {
         "code": code.value,
         "stock": stock.value
     };
-    socket.emit("product", prod);
-    title.value = "";
-    description.value = "";
-    price.value = "";
-    code.value = "";
-    stock.value = "";
-    alert(`Se creó el producto ${prod.title}. Puede chequearlo en la lista debajo.`);
+    const url = `http://localhost:8080/api/productByCode/${prod.code}`;
+    const response = await fetch(url);
+    const Toast = Swal.mixin({
+        toast: true,
+        position: 'top-end',
+        color: '#11191f',
+        background: 'white',
+        customClass: {
+            popup: 'colored-toast',
+        },
+        showConfirmButton: false,
+        timer: 1000,
+        timerProgressBar: false,
+    });
+    console.log ("status",response)
+    if (response.status === 500) {
+        socket.emit("product", prod);
+        title.value = "";
+        description.value = "";
+        price.value = "";
+        code.value = "";
+        stock.value = "";
+        Toast.fire({
+            icon: 'success',
+            iconColor: '#1cc738',
+            title: `Producto "${prod.title}" agregado exitosamente en la DB✅`,
+        })
+    } else {
+        Toast.fire({
+            icon: 'error',
+            iconColor: '#af0707',
+            title: `Producto "${prod.title}" ya existente en la DB⛔`,
+        })
+    }
 });
 
-socket.on("products", ({ products }) => {
+socket.on("products", async (products) => {
     const productList = document.getElementById("product-list");
     productList.innerText = "";
     products.forEach((product) => {
